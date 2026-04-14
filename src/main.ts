@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import session from 'express-session';
+import { RedisStore } from 'connect-redis';
+import { createClient } from 'redis';
 
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -9,7 +11,7 @@ async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
 
   if (!process.env.SESSION_SECRET) {
-    throw new Error('SESSION_SECRET is not defined');
+    throw new Error('SESSION_SECRET 값이 없습니다.');
   }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -17,12 +19,18 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   app.enableCors({
-    origin: true,
+    origin: 'http://localhost:8000',
     credentials: true,
   });
 
+  const redisClient = createClient({
+    url: process.env.REDIS_URL,
+  });
+  await redisClient.connect();
+
   app.use(
     session({
+      store: new RedisStore({ client: redisClient }),
       secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
