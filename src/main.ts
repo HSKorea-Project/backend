@@ -19,7 +19,7 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   app.enableCors({
-    origin: 'http://localhost:8000',
+    origin: ['http://localhost:8000', 'http://192.168.149.222:3000'],
     credentials: true,
   });
 
