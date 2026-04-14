@@ -5,8 +5,9 @@ import session from 'express-session';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
+import { GlobalExceptionFilter } from './global/error/error.filter';
 import { ResponseInterceptor } from './global/common/response.interceptor';
-import { ErrorFilter } from './global/error/error.filter';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -17,9 +18,10 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
-  app.useGlobalFilters(new ErrorFilter());
-
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  
   app.set('trust proxy', 1);
 
   app.enableCors({
