@@ -1,98 +1,68 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException } from "@nestjs/common";
 
-type ErrorCode = {
-  status: number;
-  errorCode: string;
-  reason: string;
-};
-
-export class CustomException extends HttpException {
-  // 400 Bad Request
-  static readonly BAD_REQUEST: ErrorCode = {
-    status: HttpStatus.BAD_REQUEST,
-    errorCode: 'BAD_REQUEST',
-    reason: '잘못된 요청입니다',
-  };
-
-  // 401 Unauthorized
-  static readonly UNAUTHORIZED: ErrorCode = {
-    status: HttpStatus.UNAUTHORIZED,
-    errorCode: 'UNAUTHORIZED',
-    reason: '인증에 실패했습니다',
-  };
-
-  // 403 Forbidden
-  static readonly FORBIDDEN: ErrorCode = {
-    status: HttpStatus.FORBIDDEN,
-    errorCode: 'FORBIDDEN',
-    reason: '접근 권한이 없습니다',
-  };
-
-  // 404 Not Found
-  static readonly NOT_FOUND: ErrorCode = {
-    status: HttpStatus.NOT_FOUND,
-    errorCode: 'NOT_FOUND',
-    reason: '리소스를 찾을 수 없습니다',
-  };
-
-  static readonly USER_NOT_FOUND: ErrorCode = {
-    status: HttpStatus.NOT_FOUND,
-    errorCode: 'USER_NOT_FOUND',
-    reason: '사용자를 찾을 수 없습니다',
-  };
-
-  // 500 Internal Server Error
-  static readonly INTERNAL_SERVER_ERROR: ErrorCode = {
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    errorCode: 'INTERNAL_SERVER_ERROR',
-    reason: '서버 내부 오류가 발생했습니다',
-  };
-
-  constructor(error: ErrorCode) {
-    super(
-      {
-        resultType: 'FAIL',
-        code: error.status,
-        errorCode: error.errorCode,
-        reason: error.reason,
-        data: null,
-      },
-      error.status,
-    );
+//기본 커스텀 에러
+export class CustomException extends HttpException{
+  constructor(
+    public readonly statusCode: number,
+    public readonly errorCode: string,
+    public readonly reason: string,
+    public readonly data: unknown = null,
+  ){
+    super({ statusCode, errorCode, reason, data }, statusCode);
   }
 }
 
-// 400 Bad Request
-export class BadRequestException extends CustomException {
-  constructor(error: ErrorCode = CustomException.BAD_REQUEST) {
-    super(error);
+// BAD_REQUEST
+export class BadRequestException extends CustomException{
+  constructor(
+    reason = '잘못된 요청입니다.',
+    errorCode = 'BAD_REQUEST',
+    data = null,
+  ){
+    super(400, errorCode, reason, data);
   }
 }
 
-// 401 Unauthorized
-export class UnauthorizedException extends CustomException {
-  constructor(error: ErrorCode = CustomException.UNAUTHORIZED) {
-    super(error);
+// UNAUTHORIZED
+export class UnauthorizedException extends CustomException{
+  constructor(
+    reason = '인증에 실패했습니다.',
+    errorCode = 'UNAUTHORIZED',
+    data = null,
+  ){
+    super(401, errorCode, reason, data);
   }
 }
 
-// 403 Forbidden
-export class ForbiddenException extends CustomException {
-  constructor(error: ErrorCode = CustomException.FORBIDDEN) {
-    super(error);
+// FORBIDDEN
+export class ForbiddenException extends CustomException{
+  constructor(
+    reason = '접근 권한이 없습니다.',
+    errorCode = 'FORBIDDEN',
+    data = null,
+  ){
+    super(403, errorCode, reason, data);
   }
 }
 
-// 404 Not Found
+//NOT_FOUND
 export class NotFoundException extends CustomException {
-  constructor(error: ErrorCode = CustomException.NOT_FOUND) {
-    super(error);
+  constructor(
+    reason = '리소스를 찾을 수 없습니다',
+    errorCode = 'NOT_FOUND',
+    data = null,
+  ) {
+    super(404, errorCode, reason, data);
   }
 }
 
-// 500 Internal Server Error
+// INTERNAL_SERVER_ERROR
 export class InternalServerException extends CustomException {
-  constructor(error: ErrorCode = CustomException.INTERNAL_SERVER_ERROR) {
-    super(error);
+  constructor(
+    reason = '서버 내부 오류가 발생했습니다',
+    errorCode = 'INTERNAL_SERVER_ERROR',
+    data = null,
+  ) {
+    super(500, errorCode, reason, data);
   }
 }
