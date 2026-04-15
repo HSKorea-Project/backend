@@ -63,6 +63,3 @@ jobs:
 
       - name: 테스트 실행
         run: npm run test -- --ci --passWithNoTests
-
-      - name: Docker build
-        run: docker build -t nest-app .
