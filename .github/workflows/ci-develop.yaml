@@ -1,0 +1,68 @@
+name: CI - Pull Request
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: test
+      DB_PASSWORD: test
+      DB_NAME: test
+
+      REDIS_URL: redis://localhost:6379
+      SESSION_SECRET: testsecret
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: DB 준비 대기
+        run: |
+          for i in {1..10}; do
+            nc -z localhost 5432 && break
+            sleep 1
+          done
+
+      - name: 빌드
+        run: npm run build
+
+      - name: 테스트 실행
+        run: npm run test -- --ci --passWithNoTests
+
+      - name: Docker build
+        run: docker build -t nest-app .
