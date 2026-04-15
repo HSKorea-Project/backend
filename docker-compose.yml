@@ -2,10 +2,10 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    image: ${DOCKER_IMAGE}
     container_name: HSK-app
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     env_file:
       - .env
     depends_on:
@@ -16,11 +16,11 @@ services:
     image: postgres:15
     container_name: HSK-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hskorea
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -28,7 +28,7 @@ services:
     image: redis:7
     container_name: HSK-redis
     ports:
-      - "6380:6379"
+      - "127.0.0.1:${REDIS_PORT}:6379"
 
 volumes:
   postgres_data:
