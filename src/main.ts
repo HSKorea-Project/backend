@@ -1,3 +1,6 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import session from 'express-session';
@@ -6,6 +9,7 @@ import { createClient } from 'redis';
 
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import { GlobalExceptionFilter } from './global/error/error.filter';
 import { ResponseInterceptor } from './global/common/response.interceptor';
@@ -52,6 +56,16 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api/v1');
+
+  const config = new DocumentBuilder()
+  .setTitle('API')
+  .setDescription('API Documentation')
+  .setVersion('1.0')
+  .addBearerAuth()
+  .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
 
   await app.listen(Number(process.env.BACKEND_PORT));
 }
