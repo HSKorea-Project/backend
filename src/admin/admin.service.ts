@@ -1,37 +1,90 @@
-import { Injectable } from '@nestjs/common';
-import { UnauthorizedException } from 'src/global/error/custom.exception';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Admin } from './admin.entity';
-
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
+
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
+import { Admin } from './admin.entity';
+import { AdminDto } from './admin.dto';
 
 @Injectable()
 export class AdminService {
   constructor(
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
     @InjectRepository(Admin)
-    private adminRepository: Repository<Admin>
+    private readonly adminRepository: Repository<Admin>,
+    @InjectRedis() private readonly redis: Redis,
   ) {}
 
-  async login(adminId: string, password: string) {
+  async login(adminDto: AdminDto) {
+    const { adminId, password, deviceId } = adminDto;
+
     const admin = await this.adminRepository.findOne({ where: { adminId } });
-    if (!admin) throw new UnauthorizedException('사용자가 존재하지 않습니다.');
-
+    if (!admin) throw new UnauthorizedException('인증 실패');
+  
     const isValid = await bcrypt.compare(password, admin.password);
-    if (!isValid) throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
-
-    const payload = {
-      sub: admin.id,
-      adminId: admin.adminId
-    };
-
+    if (!isValid) throw new UnauthorizedException('인증 실패');
+  
+    const jti = randomUUID();
+  
+    const accessToken = this.jwtService.sign(
+      { sub: admin.id, adminId },
+      { expiresIn: '1h' },
+    );
+  
+    const refreshToken = this.jwtService.sign(
+      { sub: admin.id, adminId, deviceId, jti },
+      { expiresIn: '7d' },
+    );
+  
+    await this.redis.set(
+      `session:${admin.id}:${deviceId}`,
+      JSON.stringify({ jti }),
+      'EX',
+      60 * 60 * 24 * 7,
+    );
+  
     return {
-      message: "관리자 로그인 성공",
-      data: {
-        accessToken: this.jwtService.sign(payload)
-      }
+      accessToken,
+      refreshToken,
+      deviceId,
     };
+  }
+
+  async refresh(refreshToken: string) {
+    if (!refreshToken) throw new UnauthorizedException('토큰 없음');
+  
+    const decoded = this.jwtService.verify(refreshToken);
+    if (!decoded) throw new UnauthorizedException('유효하지 않은 토큰');
+
+    const { sub, adminId, deviceId, jti } = decoded;
+  
+    const session = await this.redis.get(`session:${sub}:${deviceId}`);
+    if (!session) throw new UnauthorizedException('세션 없음');
+  
+    const parsed = JSON.parse(session);
+    if (parsed.jti !== jti) throw new UnauthorizedException('재사용 의심 토큰');
+  
+    const newAccessToken = this.jwtService.sign(
+      { sub, adminId },
+      { expiresIn: '1h' },
+    );
+  
+    return { accessToken: newAccessToken, deviceId: deviceId };
+  }
+
+  async logout(refreshToken: string) {
+    if (!refreshToken) throw new UnauthorizedException('토큰 없음');
+
+    const decoded = this.jwtService.verify(refreshToken);
+    if (!decoded) throw new UnauthorizedException('유효하지 않은 토큰');
+
+    const { sub, deviceId } = decoded;
+
+    await this.redis.del(`session:${sub}:${deviceId}`);
+    return;
   }
 }

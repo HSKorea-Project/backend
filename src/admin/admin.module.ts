@@ -6,6 +6,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Admin } from './admin.entity';
 import { ConfigService } from '@nestjs/config';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
   imports: [
@@ -16,7 +17,11 @@ import { ConfigService } from '@nestjs/config';
         secret: config.getOrThrow('JWT_SECRET'),
         signOptions: { expiresIn: '1h' }
       })
-    })
+    }),
+    RedisModule.forRoot({
+      type: 'single',
+      url: 'redis://localhost:6379',
+    }),
   ],
   controllers: [AdminController],
   providers: [AdminService, JwtStrategy],

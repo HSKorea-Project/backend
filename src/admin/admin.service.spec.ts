@@ -3,7 +3,9 @@ import { AdminService } from './admin.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Admin } from './admin.entity';
 import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import Redis from 'ioredis';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -12,73 +14,124 @@ describe('AdminService', () => {
     findOne: jest.fn(),
   };
 
-  const mockJwtService = {
+  const mockJwt = {
     sign: jest.fn(),
+    verify: jest.fn(),
+  };
+
+  const mockRedis = {
+    set: jest.fn(),
+    get: jest.fn(),
+    del: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
-        {
-          provide: getRepositoryToken(Admin),
-          useValue: mockRepo,
-        },
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
+        { provide: getRepositoryToken(Admin), useValue: mockRepo },
+        { provide: JwtService, useValue: mockJwt },
+        { provide: Redis, useValue: mockRedis },
       ],
     }).compile();
 
-    service = module.get<AdminService>(AdminService);
+    service = module.get(AdminService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
+  /* =========================
+   * LOGIN
+   * ========================= */
   it('login success', async () => {
-    const admin = {
-      id: '1',
-      adminId: 'admin',
-      password: 'hashed_pw',
-    };
-
-    mockRepo.findOne.mockResolvedValue(admin);
-    mockJwtService.sign.mockReturnValue('access-token');
-
-    jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
-
-    const result = await service.login('admin', '1234');
-
-    expect(result).toEqual({
-      message: '관리자 로그인 성공',
-      data: {
-        accessToken: 'access-token',
-      },
-    });
-  });
-
-  it('fail - admin not found', async () => {
-    mockRepo.findOne.mockResolvedValue(null);
-
-    await expect(
-      service.login('admin', '1234'),
-    ).rejects.toThrow('사용자가 존재하지 않습니다.');
-  });
-
-  it('fail - wrong password', async () => {
     mockRepo.findOne.mockResolvedValue({
       id: '1',
       adminId: 'admin',
-      password: 'hashed_pw',
+      password: 'hashed',
     });
 
-    jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
+    jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+
+    mockJwt.sign
+      .mockReturnValueOnce('access')
+      .mockReturnValueOnce('refresh');
+
+    const result = await service.login({
+      adminId: 'admin',
+      password: '1234',
+      deviceId: 'device-1',
+    } as any);
+
+    expect(result).toEqual({
+      accessToken: 'access',
+      refreshToken: 'refresh',
+      deviceId: 'device-1',
+    });
+
+    expect(mockRedis.set).toHaveBeenCalled();
+  });
+
+  it('login fail', async () => {
+    mockRepo.findOne.mockResolvedValue(null);
 
     await expect(
-      service.login('admin', 'wrong'),
-    ).rejects.toThrow('비밀번호가 일치하지 않습니다.');
+      service.login({
+        adminId: 'admin',
+        password: '1234',
+        deviceId: 'device',
+      } as any),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  /* =========================
+   * REFRESH
+   * ========================= */
+  it('refresh success', async () => {
+    mockJwt.verify.mockReturnValue({
+      sub: '1',
+      adminId: 'admin',
+      deviceId: 'device-1',
+      jti: 'abc',
+    });
+
+    mockRedis.get.mockResolvedValue(JSON.stringify({ jti: 'abc' }));
+    mockJwt.sign.mockReturnValue('new-access');
+
+    const result = await service.refresh('token');
+
+    expect(result).toEqual({
+      accessToken: 'new-access',
+      deviceId: 'device-1',
+    });
+  });
+
+  it('refresh fail - no session', async () => {
+    mockJwt.verify.mockReturnValue({
+      sub: '1',
+      deviceId: 'device-1',
+      jti: 'abc',
+    });
+
+    mockRedis.get.mockResolvedValue(null);
+
+    await expect(service.refresh('token')).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  /* =========================
+   * LOGOUT
+   * ========================= */
+  it('logout success', async () => {
+    mockJwt.verify.mockReturnValue({
+      sub: '1',
+      deviceId: 'device-1',
+    });
+
+    await service.logout('token');
+
+    expect(mockRedis.del).toHaveBeenCalledWith(
+      'session:1:device-1',
+    );
   });
 });
