@@ -57,10 +57,15 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
 
+  const local = `http://localhost:${process.env.BACKEND_PORT}`;
+  const prod = 'https://hsukorea.com';
+
   const config = new DocumentBuilder()
   .setTitle('API')
   .setDescription('API Documentation')
   .setVersion('1.0')
+  .addServer(isProd ? prod : local)
+  .addServer(isProd ? local : prod)
   .addBearerAuth()
   .build();
 
