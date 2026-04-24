@@ -14,7 +14,7 @@ export class UserController {
     @Req() req: Request,
   ) {
     this.userService.authenticate(postId, pwCheckDto.password, req);
-    
+
     return {
       message: '인증 성공'
     };

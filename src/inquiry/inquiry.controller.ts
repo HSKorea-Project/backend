@@ -8,7 +8,8 @@ import {
     UploadedFile,
     UseInterceptors, 
     Body, 
-    Param
+    Param,
+    UseGuards
 } from "@nestjs/common";
 import { InquiryService } from "./inquiry.service";
 import { 
@@ -22,6 +23,8 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { BadRequestException } from "src/global/error/custom.exception";
 import { ApiResponse } from "@nestjs/swagger";
+import { UserGuard, LoginAuthGuard, AdminGuard } from "../guards";
+import { userInfo } from "os";
 
 const FILE_UPLOAD_OPTIONS = {
     limits: { fileSize: 10 * 1024 * 1024 }, //10M로 제한
@@ -56,6 +59,7 @@ export class InquiryController {
     // 견적 문의 조회
     @Get('/:inquiryId')
     @ApiResponse({ type: InquiryResponseDTO })
+    @UseGuards(AdminGuard, LoginAuthGuard, UserGuard)
     async findOne (
         @Param('inquiryId') inquiryId: string
     ){
@@ -77,6 +81,7 @@ export class InquiryController {
     @Patch('/:inquiryId')
     @ApiResponse({ type: InquiryResponseDTO })
     @UseInterceptors(FileInterceptor('fileUrl', FILE_UPLOAD_OPTIONS))
+    @UseGuards(AdminGuard, LoginAuthGuard, UserGuard)
     async update(
         @Param('inquiryId') inquiryId: string,
         @Body() updateInquiryDTO : UpdateInquiryDTO,
@@ -87,6 +92,7 @@ export class InquiryController {
 
     // 견적 문의 삭제
     @Delete('/:inquiryId')
+    @UseGuards(AdminGuard, LoginAuthGuard, UserGuard)
     async remove(
         @Param('inquiryId') inquiryId: string,
     ){

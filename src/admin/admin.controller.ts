@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Req, Res } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AdminService } from './admin.service';
 import { AdminDto } from './admin.dto';
+import { AdminGuard } from '@/src/guards';
 
 @Controller('admin')
 export class AdminController {
@@ -27,6 +28,8 @@ export class AdminController {
     };
   }
 
+
+  @UseGuards(AdminGuard)
   @Post('refresh')
   async refresh(@Req() req: Request) {
     const refreshToken = req.cookies?.refreshToken;
@@ -38,6 +41,7 @@ export class AdminController {
     };
   }
 
+  @UseGuards(AdminGuard)
   @Post('logout')
   async logout(
     @Req() req: Request,
