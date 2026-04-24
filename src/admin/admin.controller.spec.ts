@@ -7,25 +7,16 @@ describe('AdminController', () => {
 
   const mockService = {
     login: jest.fn(),
-    refresh: jest.fn(),
-    logout: jest.fn(),
   };
 
-  const mockRes = {
-    cookie: jest.fn(),
-    clearCookie: jest.fn(),
-  } as any;
-
   const mockReq = {
-    cookies: {},
+    session: {},
   } as any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AdminController],
-      providers: [
-        { provide: AdminService, useValue: mockService },
-      ],
+      providers: [{ provide: AdminService, useValue: mockService }],
     }).compile();
 
     controller = module.get(AdminController);
@@ -38,58 +29,25 @@ describe('AdminController', () => {
    * ========================= */
   it('login success', async () => {
     mockService.login.mockResolvedValue({
-      accessToken: 'access',
-      refreshToken: 'refresh',
+      admin: { id: 1 },
       deviceId: 'device-1',
     });
 
     const result = await controller.login(
-      {
-        adminId: 'admin',
-        password: '1234',
-        deviceId: 'device-1',
-      } as any,
-      mockRes,
+      mockReq,
+      { adminId: 'admin', password: '1234', deviceId: 'device-1' } as any,
     );
 
     expect(mockService.login).toHaveBeenCalled();
 
-    expect(mockRes.cookie).toHaveBeenCalledWith(
-      'refreshToken',
-      'refresh',
-      expect.any(Object),
-    );
-
-    expect(result).toEqual({
-      message: '로그인 성공',
-      data: {
-        accessToken: 'access',
-        deviceId: 'device-1',
-      },
-    });
-  });
-
-  /* =========================
-   * REFRESH
-   * ========================= */
-  it('refresh success', async () => {
-    mockReq.cookies.refreshToken = 'token';
-
-    mockService.refresh.mockResolvedValue({
-      accessToken: 'new-access',
+    expect(mockReq.session.user).toEqual({
+      id: 1,
+      role: 'admin',
       deviceId: 'device-1',
     });
 
-    const result = await controller.refresh(mockReq);
-
-    expect(mockService.refresh).toHaveBeenCalledWith('token');
-
     expect(result).toEqual({
-      message: '토큰 재발급 성공',
-      data: {
-        accessToken: 'new-access',
-        deviceId: 'device-1',
-      },
+      message: '로그인 성공',
     });
   });
 
@@ -97,12 +55,13 @@ describe('AdminController', () => {
    * LOGOUT
    * ========================= */
   it('logout success', async () => {
-    mockReq.cookies.refreshToken = 'token';
+    mockReq.session = {
+      destroy: jest.fn((cb) => cb && cb()),
+    };
 
-    const result = await controller.logout(mockReq, mockRes);
+    const result = await controller.logout(mockReq);
 
-    expect(mockService.logout).toHaveBeenCalledWith('token');
-    expect(mockRes.clearCookie).toHaveBeenCalledWith('refreshToken');
+    expect(mockReq.session.destroy).toHaveBeenCalled();
 
     expect(result).toEqual({
       message: '로그아웃 성공',
