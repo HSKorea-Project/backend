@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { AdminService } from './admin.service';
 import { AdminDto } from './admin.dto';
 import { AdminGuard } from '@/src/guards';
+import { ApiCookieAuth } from '@nestjs/swagger';
 
 @Controller('admin')
 export class AdminController {
@@ -23,6 +24,7 @@ export class AdminController {
     };
   }
 
+  @ApiCookieAuth('connect.sid')
   @UseGuards(AdminGuard)
   @Post('logout')
   async logout(@Req() req: Request) {

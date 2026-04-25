@@ -31,7 +31,7 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   app.enableCors({
-    origin: ['http://localhost:8000', 'http://192.168.149.222:3000'],
+    origin: ['http://localhost:8000', 'http://192.168.149.222:3000', 'http://localhost:3000', 'https://hsukorea.com/'],
     credentials: true,
   });
 
@@ -64,6 +64,7 @@ async function bootstrap() {
   .setTitle('API')
   .setDescription('API Documentation')
   .setVersion('1.0')
+  .addCookieAuth('connect.sid')
   .addServer(isProd ? prod : local)
   .addServer(isProd ? local : prod)
   .addBearerAuth()

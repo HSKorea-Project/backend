@@ -23,8 +23,8 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { BadRequestException } from "src/global/error/custom.exception";
 import { ApiResponse } from "@nestjs/swagger";
-import { UserGuard, AdminGuard } from "../guards";
-import { userInfo } from "os";
+import { UserGuard } from "../guards";
+import { ApiCookieAuth } from '@nestjs/swagger';
 
 const FILE_UPLOAD_OPTIONS = {
     limits: { fileSize: 10 * 1024 * 1024 }, //10M로 제한
@@ -59,6 +59,7 @@ export class InquiryController {
     // 견적 문의 조회
     @Get('/:inquiryId')
     @ApiResponse({ type: InquiryResponseDTO })
+    @ApiCookieAuth('connect.sid')
     @UseGuards(UserGuard)
     async findOne (
         @Param('inquiryId') inquiryId: string
@@ -80,6 +81,7 @@ export class InquiryController {
     // 견적 문의 수정
     @Patch('/:inquiryId')
     @ApiResponse({ type: InquiryResponseDTO })
+    @ApiCookieAuth('connect.sid')
     @UseInterceptors(FileInterceptor('fileUrl', FILE_UPLOAD_OPTIONS))
     @UseGuards(UserGuard)
     async update(
@@ -92,6 +94,7 @@ export class InquiryController {
 
     // 견적 문의 삭제
     @Delete('/:inquiryId')
+    @ApiCookieAuth('connect.sid')
     @UseGuards(UserGuard)
     async remove(
         @Param('inquiryId') inquiryId: string,

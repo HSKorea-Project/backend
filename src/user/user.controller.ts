@@ -1,5 +1,5 @@
 import { Controller, Req, Post, Body, Param } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { UserService } from './user.service';
 import { PwCheckDto } from './pwCheckDto';
 
