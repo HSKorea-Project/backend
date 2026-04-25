@@ -23,7 +23,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { BadRequestException } from "src/global/error/custom.exception";
 import { ApiResponse } from "@nestjs/swagger";
-import { UserGuard, LoginAuthGuard, AdminGuard } from "../guards";
+import { UserGuard, AdminGuard } from "../guards";
 import { userInfo } from "os";
 
 const FILE_UPLOAD_OPTIONS = {
@@ -59,7 +59,7 @@ export class InquiryController {
     // 견적 문의 조회
     @Get('/:inquiryId')
     @ApiResponse({ type: InquiryResponseDTO })
-    @UseGuards(AdminGuard, LoginAuthGuard, UserGuard)
+    @UseGuards(UserGuard)
     async findOne (
         @Param('inquiryId') inquiryId: string
     ){
@@ -81,7 +81,7 @@ export class InquiryController {
     @Patch('/:inquiryId')
     @ApiResponse({ type: InquiryResponseDTO })
     @UseInterceptors(FileInterceptor('fileUrl', FILE_UPLOAD_OPTIONS))
-    @UseGuards(AdminGuard, LoginAuthGuard, UserGuard)
+    @UseGuards(UserGuard)
     async update(
         @Param('inquiryId') inquiryId: string,
         @Body() updateInquiryDTO : UpdateInquiryDTO,
@@ -92,7 +92,7 @@ export class InquiryController {
 
     // 견적 문의 삭제
     @Delete('/:inquiryId')
-    @UseGuards(AdminGuard, LoginAuthGuard, UserGuard)
+    @UseGuards(UserGuard)
     async remove(
         @Param('inquiryId') inquiryId: string,
     ){

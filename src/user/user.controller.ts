@@ -13,7 +13,9 @@ export class UserController {
     @Body() pwCheckDto: PwCheckDto,
     @Req() req: Request,
   ) {
-    this.userService.authenticate(postId, pwCheckDto.password, req);
+    const data = await this.userService.authenticate(postId, pwCheckDto.password);
+
+    req.session.inquiryAuth = { [data.inquiryId]: true };
 
     return {
       message: '인증 성공'
