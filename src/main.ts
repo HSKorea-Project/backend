@@ -1,3 +1,6 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import session from 'express-session';
@@ -6,6 +9,7 @@ import { createClient } from 'redis';
 
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import { GlobalExceptionFilter } from './global/error/error.filter';
 import { ResponseInterceptor } from './global/common/response.interceptor';
@@ -27,7 +31,7 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   app.enableCors({
-    origin: ['http://localhost:8000', 'http://192.168.149.222:3000'],
+    origin: ['http://localhost:8000', 'http://192.168.149.222:3000', 'http://localhost:3000', 'https://hsukorea.com'],
     credentials: true,
   });
 
@@ -52,6 +56,25 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api/v1');
+
+  const local = `http://localhost:${process.env.BACKEND_PORT}`;
+  const prod = 'https://hsukorea.com';
+
+  const config = new DocumentBuilder()
+  .setTitle('API')
+  .setDescription('API Documentation')
+  .setVersion('1.0')
+  .addCookieAuth('connect.sid')
+  .addServer(isProd ? prod : local)
+  .addServer(isProd ? local : prod)
+  .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      withCredentials: true
+    }
+  });
 
   await app.listen(Number(process.env.BACKEND_PORT));
 }

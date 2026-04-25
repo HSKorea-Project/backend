@@ -3,11 +3,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { InquiryModule } from './inquiry/inquiry.module';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 import { S3Module } from './global/s3/s3.module';
+import { AdminModule } from './admin/admin.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports:[
@@ -24,14 +25,16 @@ import { S3Module } from './global/s3/s3.module';
         namingStrategy: new SnakeNamingStrategy(), // DB 컬럼명 자동으로 Snakecase로 변환
 
         autoLoadEntities: true,
-        synchronize: true, // 개발용
+        synchronize: false,
         logging: true,
       }),
     }),
     InquiryModule,
     S3Module,
+    AdminModule,
+    UserModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

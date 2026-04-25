@@ -155,7 +155,7 @@ export class CreateInquiryDTO {
     })
     @Transform(({ value }) => value === 'true')
     @IsBoolean()
-    @Equals(true, {message: '이용약관에 동의해 주세요.'})
+    @Equals(false, {message: '이용약관에 동의해 주세요.'})
     agreement: boolean;
 }
 
