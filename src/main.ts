@@ -31,7 +31,7 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   app.enableCors({
-    origin: ['http://localhost:8000', 'http://192.168.149.222:3000', 'http://localhost:3000', 'https://hsukorea.com/'],
+    origin: ['http://localhost:8000', 'http://192.168.149.222:3000', 'http://localhost:3000', 'https://hsukorea.com'],
     credentials: true,
   });
 
@@ -67,11 +67,14 @@ async function bootstrap() {
   .addCookieAuth('connect.sid')
   .addServer(isProd ? prod : local)
   .addServer(isProd ? local : prod)
-  .addBearerAuth()
   .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      withCredentials: true
+    }
+  });
 
   await app.listen(Number(process.env.BACKEND_PORT));
 }

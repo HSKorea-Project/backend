@@ -4,11 +4,12 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@
 export class UserGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest();
+    console.log(req.session);
 
-    const postId = req.params.id;
+    const postId = req.params.inquiryId;
 
     const isAdmin = req.session?.user?.role === 'admin';
-    const hasAccess = req.session?.postAccess?.[postId];
+    const hasAccess = req.session?.inquiryAuth?.[postId];
 
     if (isAdmin || hasAccess) {
       return true;
