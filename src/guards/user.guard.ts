@@ -4,7 +4,6 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@
 export class UserGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest();
-    console.log(req.session);
 
     const postId = req.params.inquiryId;
 
