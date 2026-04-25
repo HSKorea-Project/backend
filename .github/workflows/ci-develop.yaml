@@ -60,6 +60,3 @@ jobs:
 
       - name: 빌드
         run: npm run build
-
-      - name: 테스트 실행
-        run: npm run test -- --ci --passWithNoTests

@@ -36,5 +36,5 @@ jobs:
 
             echo "${{ secrets.BACKEND_ENV }}" > .env
 
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            docker compose pull
+            docker compose up -d --force-recreate
