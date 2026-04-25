@@ -1,12 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminService } from './admin.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Admin } from './admin.entity';
-import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('AdminService', () => {
   let service: AdminService;
+  let repo: Repository<Admin>;
 
   const mockRepo = {
     findOne: jest.fn(),
@@ -16,56 +18,34 @@ describe('AdminService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
-        { provide: getRepositoryToken(Admin), useValue: mockRepo },
+        {
+          provide: getRepositoryToken(Admin),
+          useValue: mockRepo,
+        },
       ],
     }).compile();
 
-    service = module.get(AdminService);
+    service = module.get<AdminService>(AdminService);
+    repo = module.get<Repository<Admin>>(getRepositoryToken(Admin));
   });
 
-  afterEach(() => jest.clearAllMocks());
-
-  /* =========================
-   * LOGIN
-   * ========================= */
-  it('login success', async () => {
-    mockRepo.findOne.mockResolvedValue({
-      id: 1,
-      adminId: 'admin',
-      password: 'hashed',
-    });
-
-    jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
-
-    const result = await service.login({
-      adminId: 'admin',
-      password: '1234',
-      deviceId: 'device-1',
-    } as any);
-
-    expect(result).toEqual({
-      admin: {
-        id: 1,
-        adminId: 'admin',
-        password: 'hashed',
-      },
-      deviceId: 'device-1',
-    });
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('login fail - user not found', async () => {
+  it('admin이 없으면 인증 실패', async () => {
     mockRepo.findOne.mockResolvedValue(null);
 
     await expect(
       service.login({
         adminId: 'admin',
         password: '1234',
-        deviceId: 'device',
-      } as any),
+        deviceId: 'device-1',
+      }),
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it('login fail - wrong password', async () => {
+  it('비밀번호가 틀리면 인증 실패', async () => {
     mockRepo.findOne.mockResolvedValue({
       id: 1,
       adminId: 'admin',
@@ -78,8 +58,31 @@ describe('AdminService', () => {
       service.login({
         adminId: 'admin',
         password: 'wrong',
-        deviceId: 'device',
-      } as any),
+        deviceId: 'device-1',
+      }),
     ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('정상 로그인 시 admin과 deviceId 반환', async () => {
+    const mockAdmin = {
+      id: 1,
+      adminId: 'admin',
+      password: 'hashed',
+    };
+
+    mockRepo.findOne.mockResolvedValue(mockAdmin);
+
+    jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+
+    const result = await service.login({
+      adminId: 'admin',
+      password: 'correct',
+      deviceId: 'device-1',
+    });
+
+    expect(result).toEqual({
+      admin: mockAdmin,
+      deviceId: 'device-1',
+    });
   });
 });
