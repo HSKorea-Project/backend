@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ForbiddenException, InternalServerException, UnauthorizedException } from 'src/global/error/custom.exception';
+import { ForbiddenException, InternalServerException, UnauthorizedException, BadRequestException } from 'src/global/error/custom.exception';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { InquiryEntity } from '../inquiry/inquiry.entity';
@@ -44,6 +44,22 @@ export class UserService {
 
   async sendCode(phoneNum: SendCodeDto) {
     const { phoneNumber } = phoneNum;
+
+    const cooldownKey = `sms:cooldown:${phoneNumber}`;
+    const countKey = `sms:count:${phoneNumber}:${this.getToday()}`;
+
+    // 재요청 1분 제한
+    const cooldown = await this.redisService.get(cooldownKey);
+    if (cooldown) {
+      throw new BadRequestException('1분 후 다시 요청 가능합니다.');
+    }
+
+    // 하루 5회 제한
+    const count = await this.redisService.get(countKey);
+    if (count && Number(count) >= 3) {
+      throw new BadRequestException('하루 최대 5회만 인증번호를 요청할 수 있습니다.');
+    }
+
     const code = await this.generateCode();
 
     const reids = await this.redisService.set(
@@ -65,7 +81,11 @@ export class UserService {
     }
   }
 
-  async generateCode(): Promise<string> {
+  private getToday() {
+    return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  }
+
+  private async generateCode(): Promise<string> {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
