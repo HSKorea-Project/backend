@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ForbiddenException, InternalServerException } from 'src/global/error/custom.exception';
+import { ForbiddenException, InternalServerException, UnauthorizedException } from 'src/global/error/custom.exception';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { InquiryEntity } from '../inquiry/inquiry.entity';
@@ -73,8 +73,8 @@ export class UserService {
     const { phoneNumber, code } = dto
 
     const storedCode = await this.redisService.get(`verify:${phoneNumber}`);
-    if (!storedCode) throw new Error('인증번호 만료');
-    if (storedCode !== code) throw new Error('인증번호 불일치');
+    if (!storedCode) throw new UnauthorizedException('인증번호 만료');
+    if (storedCode !== code) throw new ForbiddenException('인증번호 불일치');
 
     await this.redisService.del(`verify:${phoneNumber}`);
 
