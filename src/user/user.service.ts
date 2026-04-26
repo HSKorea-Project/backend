@@ -49,7 +49,7 @@ export class UserService {
     const reids = await this.redisService.set(
       `verify:${phoneNumber}`,
       code,
-      300 // 5분
+      600 // 10분
     );
 
     try {
@@ -57,7 +57,7 @@ export class UserService {
         {
           to: phoneNumber,
           from: process.env.SMS_SEND_PHONE_NUMBER,
-          text: `[인증번호] ${code}를 입력해주세요.`
+          text: `[인증번호] ${code}를 10분 안에 입력해주세요.`
         }
       );
     } catch (e) {
