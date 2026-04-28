@@ -9,7 +9,9 @@ import {
     UseInterceptors, 
     Body, 
     Param,
-    UseGuards
+    UseGuards,
+    UsePipes,
+    Request
 } from "@nestjs/common";
 import { InquiryService } from "./inquiry.service";
 import { 
@@ -21,22 +23,12 @@ import {
     SearchInquiryDTO 
 } from "./inquiry.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { BadRequestException } from "src/global/error/custom.exception";
 import { ApiResponse } from "@nestjs/swagger";
 import { UserGuard } from "../guards";
 import { ApiCookieAuth } from '@nestjs/swagger';
 
-const FILE_UPLOAD_OPTIONS = {
-    limits: { fileSize: 10 * 1024 * 1024 }, //10M로 제한
-    fileFilter: (req, file, callback) => {
-        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-        if (allowedTypes.includes(file.mimetype)) {
-            callback(null, true);
-        } else {
-            callback(new BadRequestException('pdf, jpeg, png만 업로드 가능합니다'), false);
-        }
-    }
-};
+import type { Request as Req } from 'express';
+import { FILE_UPLOAD_OPTIONS, INQUIRY_VALIDATION_PIPE } from "./inquiry.pipe";
 
 @Controller('inquiry')
 export class InquiryController {
@@ -62,15 +54,18 @@ export class InquiryController {
     @ApiCookieAuth('connect.sid')
     @UseGuards(UserGuard)
     async findOne (
-        @Param('inquiryId') inquiryId: string
+        @Param('inquiryId') inquiryId: string,
+        @Request() req: Req, //세션에서 관리자 여부 확인
     ){
-        return this.inquiryService.findOne(inquiryId)
+        const isAdmin = req.session?.user?.role === 'admin';
+        return this.inquiryService.findOne(inquiryId, isAdmin);
     }
     
     // 견적 문의 생성
     @Post()
     @ApiResponse({ type: InquiryResponseDTO })
     @UseInterceptors(FileInterceptor('fileUrl', FILE_UPLOAD_OPTIONS))
+    @UsePipes(INQUIRY_VALIDATION_PIPE)
     async create(
         @Body() createInquiryDTO : CreateInquiryDTO,
         @UploadedFile() file?: Express.Multer.File
@@ -84,6 +79,7 @@ export class InquiryController {
     @ApiCookieAuth('connect.sid')
     @UseInterceptors(FileInterceptor('fileUrl', FILE_UPLOAD_OPTIONS))
     @UseGuards(UserGuard)
+    @UsePipes(INQUIRY_VALIDATION_PIPE)
     async update(
         @Param('inquiryId') inquiryId: string,
         @Body() updateInquiryDTO : UpdateInquiryDTO,
