@@ -6,6 +6,7 @@ export class SendCodeDto {
     description: "휴대폰 번호",
     example: '01012341234',
   })
+  @IsString()
   @Matches(/^010\d{8}$/)
   phoneNumber: string;
 }

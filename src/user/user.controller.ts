@@ -38,6 +38,26 @@ export class UserController {
 
   @Post('checkCode')
   async checkPost(
+    @Body() dto: VerifyCodeDto
+  ) {
+    await this.userService.verifyCode(dto);
+    return {
+      message: '인증 성공'
+    };
+  }
+
+  @Post('sendCode')
+  async codePost(
+    @Body() dto: SendCodeDto
+  ) {
+    await this.userService.sendCode(dto);
+    return {
+      message: '인증번호 발송 완료'
+    };
+  }
+
+  @Post('checkCode')
+  async checkPost(
     @Body() dto: VerifyCodeDto,
     @Req() req: Request,
   ) {
