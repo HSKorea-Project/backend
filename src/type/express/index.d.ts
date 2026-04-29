@@ -8,9 +8,8 @@ declare module 'express-serve-static-core' {
 
 declare module 'express-session' {
     interface SessionData {
-        user?: {
-            role: string;
-        };
+        user?: { role: string;};
         inquiryAuth?: Record<string, boolean>;
+        phoneVerified?: boolean;
     }
 }

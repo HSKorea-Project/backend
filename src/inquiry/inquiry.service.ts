@@ -77,7 +77,7 @@ export class InquiryService{
             inquiry.isNew = false;
         }
         // 비밀번호 제외하고 조회
-        const { passwordHash, expiredAt, agreement, ...result} = inquiry;
+        const { passwordHash, agreement, ...result} = inquiry;
         return { message: '조회 성공', data: result };
     }
     
@@ -100,7 +100,7 @@ export class InquiryService{
         
         await this.inquiryRepository.save(newInquiry);
         // 비밀번호는 반환 X
-        const { passwordHash, expiredAt, agreement, ...result } = newInquiry;
+        const { passwordHash, agreement, ...result } = newInquiry;
         return { message: '해당 문의가 생성 되었습니다', data: result };
     }
 
@@ -125,7 +125,7 @@ export class InquiryService{
                 if (inquiry.fileUrl) {
                     await this.s3Service.deleteFile(inquiry.fileUrl);
                 }
-                const { passwordHash, passwordConfirm, expiredAt, agreement, ...result } = updateInquiry; 
+                const { passwordHash, passwordConfirm, agreement, ...result } = updateInquiry; 
                 return { message: '해당 문의가 수정되었습니다.', data: result };
             }catch (err){
                 await this.s3Service.deleteFile(newFileUrl);
@@ -134,7 +134,7 @@ export class InquiryService{
         }
         const updateInquiry = { ...inquiry, ...updateInquiryDTO };
         await this.inquiryRepository.save(updateInquiry);
-        const { passwordHash, passwordConfirm, expiredAt, agreement, ...result } = updateInquiry; 
+        const { passwordHash, passwordConfirm, agreement, ...result } = updateInquiry; 
         return { message: '해당 문의가 수정되었습니다.', data: result };
     }
 

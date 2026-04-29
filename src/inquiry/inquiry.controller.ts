@@ -29,6 +29,7 @@ import { ApiCookieAuth } from '@nestjs/swagger';
 
 import type { Request as Req } from 'express';
 import { FILE_UPLOAD_OPTIONS, INQUIRY_VALIDATION_PIPE } from "./inquiry.pipe";
+import { PhoneVerifiedGaurd } from "../guards/verify.guard";
 
 @Controller('inquiry')
 export class InquiryController {
@@ -66,9 +67,10 @@ export class InquiryController {
     @ApiResponse({ type: InquiryResponseDTO })
     @UseInterceptors(FileInterceptor('fileUrl', FILE_UPLOAD_OPTIONS))
     @UsePipes(INQUIRY_VALIDATION_PIPE)
+    @UseGuards(PhoneVerifiedGaurd)
     async create(
         @Body() createInquiryDTO : CreateInquiryDTO,
-        @UploadedFile() file?: Express.Multer.File
+        @UploadedFile() file?: Express.Multer.File,
     ){
         return this.inquiryService.create(createInquiryDTO, file)
     }
