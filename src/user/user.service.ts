@@ -76,6 +76,9 @@ export class UserService {
           text: `[인증번호] ${code}를 10분 안에 입력해주세요.`
         }
       );
+      await this.redisService.set(cooldownKey, '1', 60);
+      await this.redisService.set(countKey, String(Number(count ?? 0) + 1), 86400);
+
     } catch (e) {
       throw new InternalServerException('SMS 발송 실패');
     }
