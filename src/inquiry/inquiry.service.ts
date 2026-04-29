@@ -28,11 +28,12 @@ export class InquiryService{
         const [data, total] = await this.inquiryRepository.findAndCount({
             select: {
                 inquiryId: true,
+                isNew: true,
                 companyName: true,
                 customerName: true,
-                serviceType: true,
                 moveDate: true,
                 createdAt: true,
+                status: true,
             },
             skip,
             take: limit,
@@ -56,19 +57,27 @@ export class InquiryService{
         };
     }
 
-    // passwordhash 포함 내부 단건 조회 - update, remove
+    // password 포함 내부 단건 조회 - update, remove
     private async findOneEntity(inquiryId: string): Promise<InquiryEntity>{
-        const inquiry = await this.inquiryRepository.findOne({
+        const foundInquiry = await this.inquiryRepository.findOne({
             where: { inquiryId },
         });
-        if (!inquiry) throw new NotFoundException('해당 문의를 찾을 수 없습니다.');
-        return inquiry;
+        if (!foundInquiry) throw new NotFoundException('해당 문의를 찾을 수 없습니다.');
+        return foundInquiry;
     }
 
-    // passwordhash 미포함 외부 단건 조회 - 클라이언트 응답 시
-    async findOne(inquiryId: string) {
+    // password 미포함 외부 단건 조회 - 클라이언트 응답 시
+    async findOne(inquiryId: string, isAdmin: boolean = false) {
+        const inquiry = await this.findOneEntity(inquiryId);
+        if (isAdmin && inquiry.isNew){
+            await this.inquiryRepository.update(
+                { inquiryId },
+                { isNew: false }
+            );
+            inquiry.isNew = false;
+        }
         // 비밀번호 제외하고 조회
-        const { passwordHash, expiredAt, agreement, ...result} = await this.findOneEntity(inquiryId);
+        const { passwordHash, agreement, ...result} = inquiry;
         return { message: '조회 성공', data: result };
     }
     
@@ -91,7 +100,7 @@ export class InquiryService{
         
         await this.inquiryRepository.save(newInquiry);
         // 비밀번호는 반환 X
-        const { passwordHash, expiredAt, agreement, ...result } = newInquiry;
+        const { passwordHash, agreement, ...result } = newInquiry;
         return { message: '해당 문의가 생성 되었습니다', data: result };
     }
 
@@ -116,7 +125,7 @@ export class InquiryService{
                 if (inquiry.fileUrl) {
                     await this.s3Service.deleteFile(inquiry.fileUrl);
                 }
-                const { passwordHash, passwordConfirm, expiredAt, agreement, ...result } = updateInquiry; 
+                const { passwordHash, passwordConfirm, agreement, ...result } = updateInquiry; 
                 return { message: '해당 문의가 수정되었습니다.', data: result };
             }catch (err){
                 await this.s3Service.deleteFile(newFileUrl);
@@ -125,7 +134,7 @@ export class InquiryService{
         }
         const updateInquiry = { ...inquiry, ...updateInquiryDTO };
         await this.inquiryRepository.save(updateInquiry);
-        const { passwordHash, passwordConfirm, expiredAt, agreement, ...result } = updateInquiry; 
+        const { passwordHash, passwordConfirm, agreement, ...result } = updateInquiry; 
         return { message: '해당 문의가 수정되었습니다.', data: result };
     }
 

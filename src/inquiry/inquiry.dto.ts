@@ -9,7 +9,8 @@ import {
     Min, 
     Max, 
     Equals, 
-    Matches 
+    Matches, 
+    MinLength
 } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
@@ -25,7 +26,7 @@ export class CreateInquiryDTO {
         description: '고객사 명',
         example: 'HSKorea',
     })
-    @IsNotEmpty({ message: '고객사명은 필수 입력 항목입니다.'})
+    @IsNotEmpty()
     @IsString()
     companyName: string;
 
@@ -34,7 +35,7 @@ export class CreateInquiryDTO {
         description: '고객명',
         example: '양우영',
     })
-    @IsNotEmpty({ message: '고객명은 필수 입력 항목입니다.' })
+    @IsNotEmpty()
     @IsString()
     customerName: string;
 
@@ -43,7 +44,7 @@ export class CreateInquiryDTO {
         description: '휴대폰 번호',
         example: '010-9179-7217',
     })
-    @IsNotEmpty({ message: '휴대폰 번호는 필수 입력 항목입니다.' })
+    @IsNotEmpty()
     @IsString()
     phone: string;
 
@@ -53,7 +54,7 @@ export class CreateInquiryDTO {
         example: '경기도 화성시 봉담읍 샘마을길 58',
     })
     @IsString()
-    @IsNotEmpty({ message: '출발지 주소는 필수 입력 항목입니다.' })
+    @IsNotEmpty()
     fromAddress: string;
 
     // 도착지 주소
@@ -61,7 +62,7 @@ export class CreateInquiryDTO {
         description: '도착지 주소',
         example: '경기도 시흥시 정왕동 ',
     })
-    @IsNotEmpty({ message: '도착지 주소는 필수 입력 항목입니다.' })
+    @IsNotEmpty()
     @IsString()
     toAddress: string;
 
@@ -70,7 +71,7 @@ export class CreateInquiryDTO {
         description: '평수/인원수',
         example: '100평',
     })
-    @IsNotEmpty({ message: '평수/인원수는 필수 입력 항목입니다.' })
+    @IsNotEmpty()
     @IsString()
     spaceInfo: string;
 
@@ -79,7 +80,7 @@ export class CreateInquiryDTO {
         description: '이사 예정일',
         example: '2026-07-07',
     })
-    @IsNotEmpty({ message: '이사 예정일은 필수 입력 항목입니다.' })
+    @IsNotEmpty()
     @IsDateString()
     moveDate: Date;
 
@@ -88,7 +89,7 @@ export class CreateInquiryDTO {
         description: '서비스 유형',
         example: 'WAREHOUSE_MOVE',
     })  
-    @IsEnum(ServiceType, { message: '서비스 유형은 필수 입력 항목입니다.' })
+    @IsEnum(ServiceType)
     serviceType: ServiceType;
 
     // 폐기물 처리
@@ -96,7 +97,7 @@ export class CreateInquiryDTO {
         description: '폐기물 처리',
         example: 'true',
     })  
-    @Transform(({ value }) => value === 'true')
+    @Transform(({ value }) => value === true ||value === 'true')
     @IsBoolean()
     wasteDisposal: boolean;
 
@@ -105,7 +106,7 @@ export class CreateInquiryDTO {
         description: '에어컨 설치',
         example: 'true',
     }) 
-    @Transform(({ value }) => value === 'true')
+    @Transform(({ value }) => value === true ||value === 'true')
     @IsBoolean()
     acInstallation: boolean;
 
@@ -133,10 +134,8 @@ export class CreateInquiryDTO {
         example: 'qkqwhgdk',
     })
     @IsString()
-    @IsNotEmpty({ message: '비밀번호는 필수 입력 항목입니다.' })
-    @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-        message: '비밀번호는 대문자, 소문자, 숫자 또는 특수 문자를 포함해야 합니다',
-    })
+    @IsNotEmpty()
+    @MinLength(4)
     passwordHash: string;
 
     // 비밀번호 재확인
@@ -155,7 +154,7 @@ export class CreateInquiryDTO {
     })
     @Transform(({ value }) => value === 'true')
     @IsBoolean()
-    @Equals(false, {message: '이용약관에 동의해 주세요.'})
+    @Equals(true)
     agreement: boolean;
 }
 
