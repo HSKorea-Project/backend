@@ -1,4 +1,4 @@
-import { isString, IsString, Matches } from 'class-validator';
+import { IsString, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SendCodeDto {
