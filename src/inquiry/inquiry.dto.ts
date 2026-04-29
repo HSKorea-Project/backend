@@ -152,7 +152,7 @@ export class CreateInquiryDTO {
         description: '약관 동의',
         example: 'true',
     })
-    @Transform(({ value }) => value === 'true')
+    @Transform(({ value }) => value === 'true' || value === true )
     @IsBoolean()
     @Equals(true)
     agreement: boolean;
