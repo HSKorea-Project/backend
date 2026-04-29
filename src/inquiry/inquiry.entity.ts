@@ -12,6 +12,12 @@ export enum ServiceType{
     ETC_MOVE = 'ETC_MOVE', // 기타
 }
 
+export enum Status{
+    PENDING = 'PENDING', // 접수 대기
+    IN_PROGRESS = 'IN_PROGRESS', // 접수 완료
+    CANCELLED = 'CANCELLED'
+}
+
 @Entity('Inquiry')
 export class InquiryEntity extends BaseEntity{
     
@@ -41,13 +47,6 @@ export class InquiryEntity extends BaseEntity{
         comment: '휴대폰 번호'
     })
     phone: string;
-
-    @Column({
-        type: 'timestamp', 
-        nullable: true, // 임시로 true로 설정
-        comment: '휴대폰 인증 시간'
-    })
-    expiredAt: Date;
 
     @Column({
         type: 'varchar', 
@@ -130,9 +129,26 @@ export class InquiryEntity extends BaseEntity{
         type: 'boolean', 
         default: false, 
         nullable: false, 
-        comment: '약관동의'
+        comment: '약관 동의'
     })
     agreement: boolean;
+
+    @Column({
+        type: 'enum',
+        enum: Status,
+        nullable: false,
+        default: Status.PENDING,
+        comment: '문의 접수 상태'
+    })
+    status: Status;
+
+    @Column({
+        type: 'boolean',
+        nullable: false,
+        default: true,
+        comment: '신규/기존 상태'
+    })
+    isNew: boolean;
 
     @CreateDateColumn({
         type: 'timestamp',
