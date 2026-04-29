@@ -38,9 +38,11 @@ export class UserController {
 
   @Post('checkCode')
   async checkPost(
-    @Body() dto: VerifyCodeDto
+    @Body() dto: VerifyCodeDto,
+    @Req() req: Request,
   ) {
     await this.userService.verifyCode(dto);
+    req.session.phoneVerified = true;
     return {
       message: '인증 성공'
     };
