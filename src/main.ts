@@ -47,7 +47,7 @@ async function bootstrap() {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? 'none' : 'lax',
-        maxAge: 3600000,
+        maxAge: 86400000, //24시간으로 변경
       },
     }),
   );
