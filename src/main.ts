@@ -7,13 +7,11 @@ import session from 'express-session';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
 
-import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import { GlobalExceptionFilter } from './global/error/error.filter';
 import { ResponseInterceptor } from './global/common/response.interceptor';
-import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -26,7 +24,6 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   
   app.set('trust proxy', 1);
 
