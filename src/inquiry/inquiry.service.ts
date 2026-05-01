@@ -1,7 +1,7 @@
-import { ForbiddenException, Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { InquiryEntity, Status } from "./inquiry.entity"
-import { Like, Repository } from "typeorm";
+import { Like, Repository, DataSource } from "typeorm";
 import { 
     CreateInquiryDTO, 
     UpdateInquiryDTO, 
@@ -13,12 +13,24 @@ import { NotFoundException } from "src/global/error/custom.exception";
 import { S3Service } from "src/global/s3/s3.service";
 
 @Injectable()
-export class InquiryService{
+export class InquiryService implements OnModuleInit{
     constructor(
         @InjectRepository(InquiryEntity)
         private readonly inquiryRepository: Repository<InquiryEntity>,
         private readonly s3Service: S3Service,
+        private readonly dataSource: DataSource,
     ) {}
+
+    async onModuleInit() {
+        await this.dataSource.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
+        await this.dataSource.query(`
+            CREATE INDEX IF NOT EXISTS idx_inquiry_trgm
+            ON "Inquiry"
+            USING GIN (
+                (coalesce(company_name, '') || ' ' || coalesce(customer_name, '')) gin_trgm_ops
+            )    
+        `);
+    }
 
     // 견적 문의 전체 조회
     async findAll(paginationDTO: PaginationDTO) {
@@ -159,24 +171,27 @@ export class InquiryService{
     async search(searchInquiryDTO: SearchInquiryDTO) {
         const { page, limit, keyword } = searchInquiryDTO;
         const skip = (page - 1) * limit;
+        const searchQuery = this.inquiryRepository.createQueryBuilder('inquiry').select([
+            'inquiry.inquiryId',
+            'inquiry.companyName',
+            'inquiry.customerName',
+            'inquiry.serviceType',
+            'inquiry.moveDate',
+            'inquiry.createdAt',
+            'inquiry.status',
+        ])
+        .orderBy('inquiry.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit)
 
-        const [data, total] = await this.inquiryRepository.findAndCount({
-            select: {
-                inquiryId: true, 
-                companyName: true, 
-                customerName: true,
-                serviceType: true, 
-                moveDate: true, 
-                createdAt: true,
-            },
-            where: keyword ? [
-                { companyName: Like(`%${keyword}%`) },
-                { customerName: Like(`%${keyword}%`) },
-            ] : {},
-            skip,
-            take: limit,
-            order: { createdAt: 'DESC' }
-        });
+        if (keyword) {
+            searchQuery.where(
+                `replace(inquiry.company_name || inquiry.customer_name, ' ', '') ILIKE :keyword`,
+                { keyword: `%${keyword.replace(/\s/g, '')}%` }
+            );
+        }
+
+        const [data, total] = await searchQuery.getManyAndCount();
         const totalPages = Math.ceil(total / limit);
         return {
             message: '해당 문의가 검색되었습니다.',
