@@ -1,6 +1,7 @@
 import { PutObjectCommand, S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { FileUploadRequest } from "solapi";
 import { v4 as uuidv4 } from 'uuid'
 
 @Injectable()
@@ -17,7 +18,7 @@ export class S3Service{
     }
 
     // S3 업로드
-    async uploadFile(file: Express.Multer.File): Promise<string> {
+    async uploadFile(file: Express.Multer.File): Promise<{fileUrl: string, fileName: string}> {
         const fileName = `${uuidv4()}_${file.originalname}` // S3 업로드 할때 uuid_파일명으로 저장
         const bucket = this.config.get<string>('S3_BUCKET_NAME')!
         const region = this.config.get<string>('S3_REGION')!
@@ -27,11 +28,14 @@ export class S3Service{
             Key: fileName,
             Body: file.buffer,
             ContentType: file.mimetype,
-            ContentDisposition: `attachment; filename="${file.originalname}"` // 관리자는 파일명.pdf로 다운
+            ContentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(file.originalname)}`// 관리자는 파일명.pdf로 다운
         })
 
         await this.s3Client.send(command)
-        return `https://${bucket}.s3.${region}.amazonaws.com/${fileName}`
+        return {
+            fileUrl: `https://${bucket}.s3.${region}.amazonaws.com/${fileName}`,
+            fileName: file.originalname
+        };
     }
 
     // S3 파일 삭제

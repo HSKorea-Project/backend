@@ -87,15 +87,18 @@ export class InquiryService{
         const hashedPassword = await hash(createInquiryDTO.passwordHash);
         // 재할당 가능하도록 설정
         let fileUrl: string | undefined = undefined;
-        
+        let fileName: string | undefined = undefined;
         if(file) {
-            fileUrl = await this.s3Service.uploadFile(file);
+            const uploaded = await this.s3Service.uploadFile(file);
+            fileUrl = uploaded.fileUrl;
+            fileName = uploaded.fileName;
         }
 
         const newInquiry = this.inquiryRepository.create({
             ...createInquiryDTO,
             passwordHash: hashedPassword,
-            fileUrl
+            fileUrl,
+            fileName
         });
         
         await this.inquiryRepository.save(newInquiry);
@@ -119,11 +122,12 @@ export class InquiryService{
         }
         // 파일이 있는 상태에서 재설정 가능
         if (file){ // 새 파일 먼저 업로드
-            const newFileUrl = await this.s3Service.uploadFile(file);
+            const {fileUrl: newFileUrl, fileName: newFileName } = await this.s3Service.uploadFile(file);
 
             try{
                 // DB 저장
                 updateInquiryDTO.fileUrl = newFileUrl;
+                updateInquiryDTO.fileName = newFileName;
                 const updateInquiry = { ...inquiry, ...updateInquiryDTO };
                 await this.inquiryRepository.save(updateInquiry);
                 // DB 성공 후에 기존 파일은 삭제함
