@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { InquiryEntity, Status } from "./inquiry.entity"
 import { Like, Repository } from "typeorm";
@@ -107,6 +107,11 @@ export class InquiryService{
     // 견적 문의 수정
     async update(inquiryId: string, updateInquiryDTO: UpdateInquiryDTO, file?: Express.Multer.File) {
         const inquiry = await this.findOneEntity(inquiryId);
+
+        // 접수 완료/취소 상태일 때 수정 불가능
+        if (inquiry.status !== Status.PENDING){
+            throw new ForbiddenException('접수 완료/삭제된 문의는 수정할 수 없습니다.');
+        }
 
         // 비밀번호가 있는 상태에서 재설정 가능
         if (updateInquiryDTO.passwordHash){
