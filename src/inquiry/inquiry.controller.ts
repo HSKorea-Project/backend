@@ -11,7 +11,8 @@ import {
     Param,
     UseGuards,
     UsePipes,
-    Request
+    Request,
+    ParseEnumPipe
 } from "@nestjs/common";
 import { InquiryService } from "./inquiry.service";
 import { 
@@ -24,12 +25,13 @@ import {
 } from "./inquiry.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiResponse } from "@nestjs/swagger";
-import { UserGuard } from "../guards";
+import { AdminGuard, UserGuard } from "../guards";
 import { ApiCookieAuth } from '@nestjs/swagger';
 
 import type { Request as Req } from 'express';
 import { FILE_UPLOAD_OPTIONS, INQUIRY_VALIDATION_PIPE } from "./inquiry.pipe";
 import { PhoneVerifiedGaurd } from "../guards/verify.guard";
+import { Status } from "./inquiry.entity";
 
 @Controller('inquiry')
 export class InquiryController {
@@ -100,4 +102,14 @@ export class InquiryController {
         return this.inquiryService.remove(inquiryId)
     }
 
+    //견적 문의 상태 변경
+    @Patch('/:inquiryId/status')
+    @ApiCookieAuth('connect.sid')
+    @UseGuards(AdminGuard)
+    async updateStatus(
+        @Param('inquiryId') inquiryId: string,
+        @Query('status', new ParseEnumPipe(Status)) status: Status,
+    ){
+        return this.inquiryService.updateStatus(inquiryId, status);
+    }
 }
