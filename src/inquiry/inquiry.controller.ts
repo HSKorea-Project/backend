@@ -12,7 +12,8 @@ import {
     UseGuards,
     UsePipes,
     Request,
-    ParseEnumPipe
+    ParseEnumPipe,
+    ValidationPipe
 } from "@nestjs/common";
 import { InquiryService } from "./inquiry.service";
 import { 
@@ -40,6 +41,7 @@ export class InquiryController {
     // 전체 문의 목록 조회
     @Get('/list')
     @ApiResponse({ type: InquiryListResponseDTO, isArray: true })
+    @UsePipes(new ValidationPipe({ transform: true }))
     async findAll(@Query() paginationDTO: PaginationDTO) {
         return this.inquiryService.findAll(paginationDTO);
     }
@@ -47,11 +49,12 @@ export class InquiryController {
     // 견적 문의 검색
     @Get('/search')
     @ApiResponse({ type: InquiryListResponseDTO, isArray: true })
+    @UsePipes(new ValidationPipe({ transform: true }))
     async search(@Query() searchInquiryDTO: SearchInquiryDTO){
         return this.inquiryService.search(searchInquiryDTO);
     }
     
-    // 견적 문의 조회
+    // 사용자 견적 문의 조회
     @Get('/:inquiryId')
     @ApiResponse({ type: InquiryResponseDTO })
     @ApiCookieAuth('connect.sid')
