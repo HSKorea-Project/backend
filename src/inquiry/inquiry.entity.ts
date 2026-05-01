@@ -111,6 +111,14 @@ export class InquiryEntity extends BaseEntity{
 
     @Column({
         type: 'varchar',
+        length: 255,
+        nullable: true,
+        comment: '파일 명'
+    })
+    fileName: string;
+
+    @Column({
+        type: 'varchar',
         length: 500, 
         nullable: true, 
         comment: '파일 URL'
