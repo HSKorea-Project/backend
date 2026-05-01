@@ -127,6 +127,11 @@ export class CreateInquiryDTO {
     @IsOptional()
     @IsString()
     fileUrl?: string;
+    
+    // 파일명
+    @IsOptional()
+    @IsString()
+    fileName?: string;
 
     // 비밀번호
     @ApiProperty({
