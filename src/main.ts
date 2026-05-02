@@ -12,6 +12,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import { GlobalExceptionFilter } from './global/error/error.filter';
 import { ResponseInterceptor } from './global/common/response.interceptor';
+import { DateTransFormInterceptor } from './global/interceptors/dateTransform.interceptor';
 
 async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -24,7 +25,7 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
-  
+  app.useGlobalInterceptors(new DateTransFormInterceptor());
   app.set('trust proxy', 1);
 
   app.enableCors({
