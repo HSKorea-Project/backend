@@ -16,7 +16,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { Transform } from "class-transformer";
 import { ServiceType } from "./inquiry.entity";
-import { PartialType } from '@nestjs/mapped-types';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { IsPasswordComfirm } from "src/global/common/utils/password-confirm.vaildator";
 
 // 견적 문의 생성
@@ -163,8 +163,10 @@ export class CreateInquiryDTO {
     agreement: boolean;
 }
 
-// 견적 문의 수정
-export class UpdateInquiryDTO extends PartialType(CreateInquiryDTO) {}
+// 견적 문의 수정 - 휴대폰 번호는 제외
+export class UpdateInquiryDTO extends PartialType(
+    OmitType(CreateInquiryDTO, ['phone'] as const)
+) {}
 
 // 견적 전체 조회 (페이지네이션)
 export class PaginationDTO {
@@ -195,7 +197,6 @@ export class InquiryListResponseDTO {
 
 // 견적 검색
 export class SearchInquiryDTO extends PaginationDTO {
-    @IsOptional()
     @IsString()
     keyword?: string;
 }
