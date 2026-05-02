@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, OnModuleInit } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { InquiryEntity, Status } from "./inquiry.entity"
 import { Like, Repository, DataSource } from "typeorm";
@@ -160,11 +160,11 @@ export class InquiryService implements OnModuleInit{
     }
 
     // 견적 문의 삭제
-    async remove(inquiryId: string): Promise<{ message: string }>{
+    async remove(inquiryId: string): Promise<{ message: string, data: null }>{
         const inquiry = await this.findOneEntity(inquiryId);
         await this.inquiryRepository.remove(inquiry);
 
-        return { message: '해당 문의가 삭제되었습니다.'};
+        return { message: '해당 문의가 삭제되었습니다.', data: null };
     }
 
     // 견적 문의 검색
@@ -183,7 +183,9 @@ export class InquiryService implements OnModuleInit{
         .orderBy('inquiry.createdAt', 'DESC')
         .skip(skip)
         .take(limit)
-
+        if (!keyword || keyword.trim() === ''){
+            throw new BadRequestException('검색어를 입력해 주세요.');
+        }
         if (keyword) {
             searchQuery.where(
                 `replace(inquiry.company_name || inquiry.customer_name, ' ', '') ILIKE :keyword`,
